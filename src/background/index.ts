@@ -3,7 +3,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "TRANSLATE") {
     const text = message.text;
-    console.log("Fetching translation for:", text);
 
     chrome.storage.sync.get(["sourceLang", "targetLang"], async (result) => {
       const sourceLang = result.sourceLang || "sv";
@@ -22,7 +21,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         console.log("Translation received:", translation);
 
-        sendResponse({ type: "SHOW_TRANSLATION", translation });
+        sendResponse({
+          type: "SHOW_TRANSLATION",
+          translation,
+          languages: { sourceLang, targetLang },
+        });
       } catch (err) {
         console.error("Translation error:", err);
         sendResponse({ type: "SHOW_TRANSLATION", translation: "[error]" });
@@ -30,5 +33,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
 
     return true; // keep channel open for async
+  }
+
+  if (message.type === "SAVE_TRANSLATION") {
+    const { selection, translation, languages } = message;
+    const langPair = languages
+      ? `${languages.sourceLang}-${languages.targetLang}`
+      : "unknown";
+    chrome.storage.sync.get("vocab", (result) => {
+      const vocab = result.vocab || [];
+      vocab.push({
+        text: selection,
+        translation,
+        languages: langPair,
+        savedAt: Date.now(),
+      });
+
+      chrome.storage.sync.set({ vocab }, () => {
+        console.log("Saved:", selection, translation);
+      });
+    });
   }
 });

@@ -25,7 +25,6 @@ export default function App() {
         }
     }, []);
 
-    // Save language when changed
     const handleSourceLangChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newLang = e.target.value;
         setSourceLang(newLang);

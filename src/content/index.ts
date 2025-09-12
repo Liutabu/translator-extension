@@ -41,7 +41,7 @@ function showTranslateButton(rect: DOMRect, text: string) {
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0) return;
         const rect = selection.getRangeAt(0).getBoundingClientRect();
-        showPopup(rect, response.translation);
+        showPopup(rect, text, response.translation, response.languages);
       }
     });
   });
@@ -56,12 +56,17 @@ chrome.runtime.onMessage.addListener((message) => {
     if (!selection || selection.rangeCount === 0) return;
 
     const rect = selection.getRangeAt(0).getBoundingClientRect();
-    showPopup(rect, message.translation);
+    showPopup(rect, selection.toString(), message.translation);
   }
 });
 
 // Show popup under selection
-function showPopup(rect: DOMRect, translation: string) {
+function showPopup(
+  rect: DOMRect,
+  selection: string,
+  translation: string,
+  languages?: { sourceLang: string; targetLang: string }
+) {
   removeElements(); // ✅ ensure old popup is gone
 
   popup = document.createElement("div");
@@ -86,6 +91,26 @@ function showPopup(rect: DOMRect, translation: string) {
   textEl.style.flex = "1";
   textEl.style.color = "#333";
 
+  // Save button
+  const saveBtn = document.createElement("button");
+  saveBtn.innerText = "💾";
+  saveBtn.title = "Save Translation";
+  Object.assign(saveBtn.style, {
+    padding: "5px",
+    cursor: "pointer",
+    border: "1px solid gray",
+    borderRadius: "4px",
+    background: "#f0f0f0",
+  });
+  saveBtn.onclick = () => {
+    chrome.runtime.sendMessage({
+      type: "SAVE_TRANSLATION",
+      selection,
+      translation,
+      languages,
+    });
+  };
+
   // Close button
   const closeBtn = document.createElement("button");
   closeBtn.innerText = "×";
@@ -106,6 +131,7 @@ function showPopup(rect: DOMRect, translation: string) {
   closeBtn.addEventListener("click", () => hidePopup());
 
   popup.appendChild(textEl);
+  popup.appendChild(saveBtn);
   popup.appendChild(closeBtn);
 
   document.body.appendChild(popup);
