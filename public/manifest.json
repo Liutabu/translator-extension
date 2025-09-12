@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Translator Extension",
+  "version": "1.0.0",
+  "description": "Select text and translate instantly!",
+  "icons": {
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_popup": "src/popup/index.html"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/index.ts"]
+    }
+  ],
+  "permissions": ["scripting", "activeTab", "storage"],
+  "web_accessible_resources": [
+    {
+      "resources": ["icon.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
