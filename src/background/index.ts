@@ -41,17 +41,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       ? `${languages.sourceLang}-${languages.targetLang}`
       : "unknown";
     chrome.storage.sync.get("vocab", (result) => {
-      const vocab = result.vocab || [];
-      vocab.push({
-        text: selection,
-        translation,
-        languages: langPair,
-        savedAt: Date.now(),
-      });
+      let vocab: {
+        text: string;
+        translation: string;
+        languages: string;
+        savedAt: number;
+      }[] = result.vocab || [];
 
-      chrome.storage.sync.set({ vocab }, () => {
-        console.log("Saved:", selection, translation);
-      });
+      // Check if text already exists (case-insensitive)
+      const exists = vocab.some(
+        (entry) =>
+          entry.text.toLowerCase() === selection.toLowerCase() &&
+          entry.translation.toLowerCase() === translation.toLowerCase()
+      );
+
+      if (!exists) {
+        vocab.push({
+          text: selection,
+          translation,
+          languages: langPair,
+          savedAt: Date.now(),
+        });
+
+        chrome.storage.sync.set({ vocab }, () => {
+          console.log("✅ Saved:", selection, "→", translation);
+          sendResponse({ type: "SAVE_RESPONSE", success: true, info: "✅ Saved", icon: "✅" });
+        });
+      } else {
+        console.log("⚠️ Already saved:", selection, "→", translation);
+        sendResponse({ type: "SAVE_RESPONSE", success: false, info: "⚠️ Already saved", icon: "⚠️" });
+      }
     });
+
+    return true; // keep channel open for async
   }
 });

@@ -49,17 +49,6 @@ function showTranslateButton(rect: DOMRect, text: string) {
   document.body.appendChild(btn);
 }
 
-// Listen for translation result
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === "SHOW_TRANSLATION") {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const rect = selection.getRangeAt(0).getBoundingClientRect();
-    showPopup(rect, selection.toString(), message.translation);
-  }
-});
-
 // Show popup under selection
 function showPopup(
   rect: DOMRect,
@@ -93,23 +82,44 @@ function showPopup(
 
   // Save button
   const saveBtn = document.createElement("button");
+  saveBtn.id = "saveBtn";
   saveBtn.innerText = "💾";
   saveBtn.title = "Save Translation";
   Object.assign(saveBtn.style, {
-    padding: "5px",
+    padding: "0",
     cursor: "pointer",
-    border: "1px solid gray",
-    borderRadius: "4px",
-    background: "#f0f0f0",
+    border: "none",
+    background: "transparent",
   });
-  saveBtn.onclick = () => {
-    chrome.runtime.sendMessage({
-      type: "SAVE_TRANSLATION",
-      selection,
-      translation,
-      languages,
-    });
-  };
+  saveBtn.addEventListener("click", () => {
+    chrome.runtime.sendMessage(
+      {
+        type: "SAVE_TRANSLATION",
+        selection,
+        translation,
+        languages,
+      },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Runtime error:", chrome.runtime.lastError.message);
+          return;
+        }
+        if (response?.type === "SAVE_RESPONSE") {
+          const originalIcon = "💾";
+          saveBtn.innerText = response.icon || originalIcon;
+          saveBtn.disabled = true; // 🚫 disable button
+          saveBtn.style.cursor = "not-allowed";
+
+          // ⏳ revert back after 3 seconds
+          setTimeout(() => {
+            saveBtn.innerText = originalIcon;
+            saveBtn.disabled = false;
+            saveBtn.style.cursor = "pointer";
+          }, 3000);
+        }
+      }
+    );
+  });
 
   // Close button
   const closeBtn = document.createElement("button");
