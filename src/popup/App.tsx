@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Popup from "./Popup";
 
 const LANGUAGES = [
     { code: "es", name: "Spanish" },
@@ -68,6 +69,7 @@ export default function App() {
                     </option>
                 ))}
             </select>
+            <Popup />
             <p style={{ marginTop: "12px", fontSize: "12px", color: "#555" }}>
                 Select text on any page → click the icon → translation in chosen
                 language.
